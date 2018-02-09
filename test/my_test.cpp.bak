@@ -1,0 +1,225 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/timeb.h>
+#include <pthread.h>
+#include <sys/syscall.h>
+#include <iostream>
+#include <vector>
+#include <assert.h>
+
+using namespace std;
+
+
+class A
+{
+public:
+	A(){cout<<"构造函数"<<endl;}
+	~A(){cout<<"析构函数"<<endl;}
+	A(const A &rhs){cout<<"拷贝构造函数"<<endl;}
+	A& operator=(const A &rhs){cout<<"赋值函数"<<endl;}
+private:
+};
+
+
+union
+{
+	int i;
+	char x[2];
+}a;
+
+char *mystrcpy(char *dest, const char *src)
+{
+	assert(dest!=NULL && src!=NULL);
+	char *p = dest;
+	while((*dest++=*src++) != '\0')
+		NULL;
+	return p;
+}
+
+int mystrlen(const char *str)
+{
+	assert(str!=NULL);
+	int count = 0;
+	while(*str++!='\0')
+		count++;
+	return count;
+}
+
+class String
+{
+	public:
+		String(const char *data);
+		~String();
+		String(const String &rhs);
+		String& operator=(const String &rhs);
+	protected:
+	private:
+		char *m_data;
+};
+
+String::String(const char *data)
+{
+	if(data!=NULL)
+	{
+		m_data = new char[strlen(data)+1];
+		strcpy(m_data,data);
+	}
+	else
+	{
+		m_data = new char[1];
+		m_data[0] = '\0';
+	}
+}
+String::~String()
+{
+	delete []m_data;
+}
+
+String::String(const String &rhs)
+{
+	m_data = new char[strlen(rhs.m_data)+1];
+	strcpy(m_data,rhs.m_data);
+}
+String& String::operator=(const String &rhs)
+{
+	if(this == &rhs)
+		return *this;
+	delete []m_data;
+	m_data = new char[strlen(rhs.m_data)+1];
+	strcpy(m_data,rhs.m_data);
+	return *this;
+}
+
+
+typedef struct Node{
+	int data;
+	Node *next;
+}Node;
+
+
+Node* create(int num)
+{
+	Node *head=NULL,*p=NULL,*s=NULL;
+	
+	for(int i=0;i<num;i++)
+	{
+		p = (Node*)malloc(sizeof(Node));
+		p->data = i+1;
+		if(head==NULL)
+		{
+			head = p;
+			s = p;
+		}
+		else
+		{
+			s->next = p;
+			s = p;
+		}
+	}
+	s->next = NULL;
+	return head;
+}
+
+void print(Node *list)
+{
+	if(NULL == list)
+		return;
+	while(list!=NULL)
+	{
+		cout<<list->data<<endl;
+		list = list->next;
+	}
+	return ;
+}
+
+Node *reverse(Node *list)
+{
+	if(list==NULL || list->next==NULL)
+		return list;
+	Node *p,*s,*t;
+	p = list;
+	s = p->next;
+	t=s->next;
+	p->next = NULL;
+	while(t!=NULL)
+	{
+		s->next = p;
+		p = s;
+		s = t;
+		t = s->next;
+	}
+	s->next = p;
+	list = s;
+	return list;
+}
+
+
+Node *merge(Node *head1, Node *head2)
+{
+	if(head1==NULL)
+		return head2;
+	if(head2==NULL)
+		return head1;
+	Node *head =NULL;
+	if(head1->data<head2->data)
+	{
+		head = head1;
+		head->next = merge(head1->next,head2);
+	}
+	else
+	{
+		head = head2;
+		head->next = merge(head1,head2->next);
+	}
+	return head;
+}
+
+class B
+{
+public:
+	B()
+	{
+		cout<<"默认构造函数"<<endl;
+	}
+	~B()
+	{
+		cout<<"析构函数"<<endl;
+	}
+	B(const B &rhs)
+	{
+		cout<<"拷贝构造函数"<<endl;
+	}
+	B& operator=(const B &rhs)
+	{
+		cout<<"赋值构造函数"<<endl;
+	}
+	B(int i):data(i)
+	{
+		cout<<"带参构造函数:"<< data <<endl;
+	}
+private:
+	int data;
+};
+
+B Play(B b) 
+{
+	return b ;
+}
+
+int main(int argc, char *argv[])
+{
+	a.x[0] =10; 
+	a.x[1] =1;
+	printf("%d\n",a.i);
+	//cout<<sizeof(B)<<endl;
+	
+	B t1 = Play(5);
+	B t2 = Play(t1);
+	//B t3 = t2;
+
+	
+	return 0;
+}
+
+
+
